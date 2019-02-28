@@ -15,7 +15,6 @@ class Photo:
         self.is_vert = is_vert
         self.tags = tags
 
-    @property  # it's actually not a fast property
     def common_tag_with(self):
         returned = set()
         for t in self.tags:
@@ -23,8 +22,8 @@ class Photo:
         returned.remove(self)
         return returned
 
-    def __repr__(self):
-        return "slide: " + str(self.index) + " -  has common tags with: [" + ", ".join(map(lambda c: str(c.index), self.common_tag_with)) + "]"
+    #def __repr__(self):
+        # "slide: " + str(self.index) + " -  has common tags with: [" + ", ".join(map(lambda c: str(c.index), self.common_tag_with)) + "]"
 
 
 class Slide:
@@ -140,7 +139,7 @@ def solve_greedy_grouping(photos: List[Photo], grouping_threshold: int, max_grou
     while len(photos) > 0:
         group_photos = set()
         for photo in group:
-            group_photos = group_photos.union(photo.common_tag_with)
+            group_photos = group_photos.union(photo.common_tag_with())
         group_photos = group_photos.intersection(photos)
         best_score = 0
         best_photo = None
@@ -204,9 +203,9 @@ def solve_greedy_picks(photos: List[Photo]) -> Solution:
         # find other photo to get best transition interest score
         best_possible_transition_score = -1
         best_possible_slide = None
-        nominees = last_slide.photos[0].common_tag_with
+        nominees = last_slide.photos[0].common_tag_with()
         if last_slide.is_pair:
-            nominees.update(last_slide.photos[1].common_tag_with)
+            nominees.update(last_slide.photos[1].common_tag_with())
         nominees = nominees.intersection(remaining_photos)
         if not nominees:  # "dead end"
             nominees = [random.choice(remaining_photos)]  # to just take another photo
@@ -238,7 +237,7 @@ def solve_path(photos: List[Photo], min_threshold:int):
         print(len(photos))
         photos.remove(current_photo)
         slides.append(Slide([current_photo]))
-        options = current_photo.common_tag_with.intersection(photos)
+        options = current_photo.common_tag_with().intersection(photos)
         best_score = 0
         best_photo = None
         for option in options:
@@ -253,15 +252,32 @@ def solve_path(photos: List[Photo], min_threshold:int):
     slides.append(Slide([current_photo]))
     return Solution(slides)
 
+def merge_verticals(photos:List[Photo]):
+    output = []
+    remember = None
+    for photo in photos:
+        if not photo.is_vert:
+            output.append(photo)
+        else:
+            if remember is None:
+                remember = photo
+            else:
+                output.append(Photo(str(photo.index)+" "+str(remember.index), False, list(set(photo.tags).union(set(remember.tags)))))
+                remember = None
+    return output
+
 def main():
     #filename="a_example.txt"
-    filename = "b_lovely_landscapes.txt"
+    #filename = "b_lovely_landscapes.txt"
     #filename = "c_memorable_moments.txt"
-    # filename = "d_pet_pictures.txt"
+    filename = "d_pet_pictures.txt"
     # filename = "e_shiny_selfies.txt"
     photos = read_file(filename)
     print(f"Calculating for {filename}…")
-    solution = solve_path(photos, 2)
+    photos = merge_verticals(photos)
+    tag_dict = {}
+    link_photos(photos)
+    solution = solve_path(photos, 10)
     print(f"Score of solution: {solution.calc_score()}")
     write_solution(solution, filename.replace(".txt", "_out.txt"))
 
