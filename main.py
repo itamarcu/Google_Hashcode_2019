@@ -100,6 +100,20 @@ def read_file(filename: str) -> List[Photo]:
     return photos
 
 
+def slidify(photos: List[Photo]) -> List[Slide]:
+    vert_buffer = []
+    slides = []
+    for p in photos:
+        if p.is_vert:
+            vert_buffer.append(p)
+        else:
+            slides.append(Slide([p]))
+        if len(vert_buffer) == 2:
+            slides.append(vert_buffer)
+            vert_buffer = []
+    return slides
+
+
 def update_tag_freq(tags):
     global tag_freq
     for t in tags:
