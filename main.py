@@ -1,5 +1,3 @@
-import functools
-import sys
 import random
 from typing import List, Set
 
@@ -22,8 +20,8 @@ class Photo:
         returned.remove(self)
         return returned
 
-    #def __repr__(self):
-        # "slide: " + str(self.index) + " -  has common tags with: [" + ", ".join(map(lambda c: str(c.index), self.common_tag_with)) + "]"
+    # def __repr__(self):
+    #     "slide: " + str(self.index) + " -  has common tags with: [" + ", ".join(map(lambda c: str(c.index), self.common_tag_with)) + "]"
 
 
 class Slide:
@@ -130,6 +128,7 @@ def calc_avg_freq():
 
 
 def link_photos(photos):
+    tag_dict.clear()
     for p in photos:
         for t in p.tags:
             if t not in tag_dict:
@@ -198,7 +197,6 @@ def solve_greedy_grouping(photos: List[Photo], grouping_threshold: int, max_grou
 def solve_greedy_picks(photos: List[Photo]) -> Solution:
     remaining_photos = photos[:]  # clone
     remaining_vertical_photos = [p for p in photos if p.is_vert]
-
     def pick_random_slide() -> Slide:
         random_photo: Photo = random.choice(remaining_photos)
         remaining_photos.remove(random_photo)  # I hope this works
@@ -214,6 +212,8 @@ def solve_greedy_picks(photos: List[Photo]) -> Solution:
     last_slide = pick_random_slide()
     slides = [last_slide]
     while remaining_photos:
+        if len(remaining_photos) % 10 == 0:
+            print(f"{len(remaining_photos)} left")
         # find other photo to get best transition interest score
         best_possible_transition_score = -1
         best_possible_slide = None
@@ -281,17 +281,16 @@ def merge_verticals(photos:List[Photo]):
     return output
 
 def main():
-    #filename="a_example.txt"
-    #filename = "b_lovely_landscapes.txt"
-    #filename = "c_memorable_moments.txt"
+    # filename="a_example.txt"
+    # filename = "b_lovely_landscapes.txt"
+    # filename = "c_memorable_moments.txt"
     filename = "d_pet_pictures.txt"
     # filename = "e_shiny_selfies.txt"
     photos = read_file(filename)
     print(f"Calculating for {filename}…")
     photos = merge_verticals(photos)
-    tag_dict = {}
     link_photos(photos)
-    solution = solve_path(photos, 10)
+    solution = solve_greedy_picks(photos)
     print(f"Score of solution: {solution.calc_score()}")
     write_solution(solution, filename.replace(".txt", "_out.txt"))
 
