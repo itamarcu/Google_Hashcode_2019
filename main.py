@@ -7,7 +7,10 @@ class Photo:
         self.index = index
         self.orientation = orientation
         self.tags = tags
+        self.common_tag_with = set()
 
+    def __repr__(self):
+        return "slide: " + str(self.index) + " -  has common tags with: [" + ", ".join(map(lambda c: str(c.index), self.common_tag_with)) + "]"
 
 class Slide:
     def __init__(self, photos: List[Photo]):
@@ -49,7 +52,25 @@ def read_file(filename: str) -> List[Photo]:
             orientation, num_of_tags, *tags = line.strip().split(" ")
             photo = Photo(index, orientation, tags)
             photos.append(photo)
+        link_photos(photos)
+        #print("done")
+        #print(photos)
     return photos
+
+
+def link_photos(photos):
+    tag_dict = {}
+    for p in photos:
+        for t in p.tags:
+            if t not in tag_dict:
+                tag_dict.update({t: [p]})
+            else:
+                tag_dict[t].append(p)
+    for p in photos:
+        for t in p.tags:
+            p.common_tag_with.update(tag_dict[t])
+        p.common_tag_with.remove(p)
+    return tag_dict
 
 
 def write_solution(solution: Solution, filename: str):
