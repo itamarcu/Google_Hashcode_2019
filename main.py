@@ -1,11 +1,12 @@
-import random
+import functools
+import sys
 from typing import List
 
 
 class Photo:
-    def __init__(self, index: int, is_vert: bool, tags: List[str]):
+    def __init__(self, index, orientation, tags):
         self.index = index
-        self.is_vert = is_vert
+        self.orientation = orientation
         self.tags = tags
         self.common_tag_with = set()
 
@@ -42,6 +43,15 @@ def calc_interest(slide1: Slide, slide2: Slide) -> int:
     interest_2 = intersection
     return min(len(interest_1), len(interest_2), len(interest_3))
 
+def calc_interest2(photo1: Photo, photo2: Photo) ->int:
+    tags1 = set(photo1.tags)
+    tags2 = set(photo2.tags)
+    intersection = tags1.intersection(tags2)
+    interest_1 = tags1.difference(intersection)
+    interest_3 = tags2.intersection(intersection)
+    interest_2 = intersection
+    return min(len(interest_1), len(interest_2), len(interest_3))
+
 
 def read_file(filename: str) -> List[Photo]:
     with open(filename, "r") as file:
@@ -50,7 +60,7 @@ def read_file(filename: str) -> List[Photo]:
         photos = []
         for index, line in enumerate(lines[1:]):
             orientation, num_of_tags, *tags = line.strip().split(" ")
-            photo = Photo(index, orientation == "V", tags)
+            photo = Photo(index, orientation, tags)
             photos.append(photo)
         link_photos(photos)
         #print("done")
@@ -80,18 +90,53 @@ def write_solution(solution: Solution, filename: str):
             file.write(", ".join(str(s.index) for s in slide.photos) + "\n")
 
 
-def solve_dumb(photos: List[Photo]) -> Solution:
-    slides = []
-    for photo in photos:
-        slides.append(Slide([photo]))
-    return Solution(slides)
+def solve_greedy_grouping(photos: List[Photo], grouping_threshold: int, max_group: int) -> Solution:
+    # temp test
+    slides_groups = []
+    slides=[]
+    group = [photos.pop()]
+    while len(photos) > 0:
+        group_photos = set()
+        for photo in group:
+            group_photos = group_photos.union(photo.common_tag_with)
+        group_photos = group_photos.intersection(photos)
+        best_score = 0
+        best_photo = None
+        best_position = 0
+        for photo in group_photos:
+            for position in range(len(group)-1):
+                new_interest = calc_interest2(photo, group[position]) + calc_interest2(photo, group[position+1]) \
+                               - calc_interest2(group[position], group[position+1])
+                if new_interest>best_score:
+                    best_score = new_interest
+                    best_photo = photo
+                    best_position = position+1
+            start_interest = calc_interest2(photo, group[0])
+            end_interest = calc_interest2(photo, group[-1])
+            if start_interest > best_score:
+                best_score = start_interest
+                best_photo = photo
+                best_position = 0
+            if end_interest > best_score:
+                best_score = end_interest
+                best_photo = photo
+                best_position = len(group)+1
+        if best_score>grouping_threshold:
+            photos.remove(best_photo)
+            group.insert(best_position, best_photo)
+            if len(group)>max_group:
+                slides_groups.append(group)
+                print(len(photos))
+                group = [photos.pop()]
+        else:
+            slides_groups.append(group)
+            print(len(photos))
+            group = [photos.pop()]
 
 
-def solve_random(photos: List[Photo]) -> Solution:
-    random.shuffle(photos)
-    slides = []
-    for photo in photos:
-        slides.append(Slide([photo]))
+    for group in slides_groups:
+        for photo in group:
+            slides.append(Slide([photo]))
     return Solution(slides)
 
 
@@ -99,7 +144,7 @@ def main():
     filename = "b_lovely_landscapes.txt"
     photos = read_file(filename)
     print(f"Calculating for {filename}…")
-    solution = solve_random(photos)
+    solution = solve_greedy_grouping(photos, 2, 5)
     print(f"Score of solution: {solution.calc_score()}")
     write_solution(solution, filename.replace(".txt", "_out.txt"))
 
