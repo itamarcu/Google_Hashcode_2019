@@ -1,6 +1,7 @@
 import functools
 import sys
-from typing import List
+import random
+from typing import List, Set
 
 
 class Photo:
@@ -8,10 +9,11 @@ class Photo:
         self.index = index
         self.orientation = orientation
         self.tags = tags
-        self.common_tag_with = set()
+        self.common_tag_with: Set[Photo] = set()
 
     def __repr__(self):
         return "slide: " + str(self.index) + " -  has common tags with: [" + ", ".join(map(lambda c: str(c.index), self.common_tag_with)) + "]"
+
 
 class Slide:
     def __init__(self, photos: List[Photo]):
@@ -23,6 +25,10 @@ class Slide:
         for p in self.photos:
             result.update(set(p.tags))
         return result
+
+    @property
+    def is_pair(self) -> bool:
+        return len(self.photos) == 2  # can only be 1 or 2
 
 
 class Solution:
@@ -56,15 +62,12 @@ def calc_interest2(photo1: Photo, photo2: Photo) ->int:
 def read_file(filename: str) -> List[Photo]:
     with open(filename, "r") as file:
         lines = file.readlines()
-        # num_of_photos = int(lines[0])
         photos = []
         for index, line in enumerate(lines[1:]):
             orientation, num_of_tags, *tags = line.strip().split(" ")
             photo = Photo(index, orientation, tags)
             photos.append(photo)
         link_photos(photos)
-        #print("done")
-        #print(photos)
     return photos
 
 
@@ -140,11 +143,64 @@ def solve_greedy_grouping(photos: List[Photo], grouping_threshold: int, max_grou
     return Solution(slides)
 
 
+def solve_greedy_picks(photos: List[Photo]) -> Solution:
+    remaining_photos = photos[:]  # clone
+    remaining_vertical_photos = [p for p in photos if p.is_vert]
+
+    def pick_random_slide() -> Slide:
+        random_photo: Photo = random.choice(remaining_photos)
+        remaining_photos.remove(random_photo)  # I hope this works
+        if random_photo.is_vert:
+            remaining_vertical_photos.remove(random_photo)  # I hope this works
+            another_random_vertical_photo = random.choice(remaining_vertical_photos)
+            remaining_vertical_photos.remove(another_random_vertical_photo)  # I hope this works
+            remaining_photos.remove(another_random_vertical_photo)  # I hope this works
+            return Slide([random_photo, another_random_vertical_photo])
+        else:
+            return Slide([random_photo])
+
+    last_slide = pick_random_slide()
+    slides = [last_slide]
+    while remaining_photos:
+        # find other photo to get best transition interest score
+        best_possible_transition_score = -1
+        best_possible_slide = None
+        nominees = last_slide.photos[0].common_tag_with
+        if last_slide.is_pair:
+            nominees.update(last_slide.photos[1].common_tag_with)
+        nominees = nominees.intersection(remaining_photos)
+        if not nominees:  # "dead end"
+            nominees = [random.choice(remaining_photos)]  # to just take another photo
+        for photo in nominees:
+            if photo.is_vert:
+                # choose another random vertical photo
+                remaining_vertical_photos.remove(photo)  # temporarily
+                another_random_vertical_photo = random.choice(remaining_vertical_photos)
+                remaining_vertical_photos.append(photo)
+                possible_slide = Slide([photo, another_random_vertical_photo])
+            else:
+                possible_slide = Slide([photo])
+            possible_score = calc_interest(last_slide, possible_slide)
+            if possible_score > best_possible_transition_score:
+                best_possible_transition_score = possible_score
+                best_possible_slide = possible_slide
+        for photo in best_possible_slide.photos:
+            remaining_photos.remove(photo)
+            if photo.is_vert:
+                remaining_vertical_photos.remove(photo)
+        last_slide = best_possible_slide
+        slides.append(last_slide)
+    return Solution(slides)
+
+
 def main():
-    filename = "b_lovely_landscapes.txt"
+    # filename = "b_lovely_landscapes.txt"
+    filename = "c_memorable_moments.txt"
+    # filename = "d_pet_pictures.txt"
+    # filename = "e_shiny_selfies.txt"
     photos = read_file(filename)
     print(f"Calculating for {filename}…")
-    solution = solve_greedy_grouping(photos, 2, 5)
+    solution = solve_greedy_picks(photos)
     print(f"Score of solution: {solution.calc_score()}")
     write_solution(solution, filename.replace(".txt", "_out.txt"))
 
