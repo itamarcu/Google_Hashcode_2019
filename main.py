@@ -187,7 +187,6 @@ def solve_greedy_grouping(photos: List[Photo], grouping_threshold: int, max_grou
             print(len(photos))
             group = [photos.pop()]
 
-
     for group in slides_groups:
         for photo in group:
             slides.append(Slide([photo]))
@@ -244,6 +243,7 @@ def solve_greedy_picks(photos: List[Photo]) -> Solution:
         slides.append(last_slide)
     return Solution(slides)
 
+
 def solve_path(photos: List[Photo], min_threshold:int):
     slides = []
     current_photo = photos[0]
@@ -266,6 +266,7 @@ def solve_path(photos: List[Photo], min_threshold:int):
     slides.append(Slide([current_photo]))
     return Solution(slides)
 
+
 def merge_verticals(photos:List[Photo]):
     output = []
     remember = None
@@ -279,6 +280,7 @@ def merge_verticals(photos:List[Photo]):
                 output.append(Photo(str(photo.index)+" "+str(remember.index), False, list(set(photo.tags).union(set(remember.tags)))))
                 remember = None
     return output
+
 
 def main():
     # filename="a_example.txt"
