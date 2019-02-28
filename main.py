@@ -91,7 +91,7 @@ def write_solution(solution: Solution, filename: str):
     with open(filename, "w") as file:
         file.write(str(len(solution.slides)) + "\n")
         for slide in solution.slides:
-            file.write(", ".join(str(s.index) for s in slide.photos) + "\n")
+            file.write(" ".join(str(s.index) for s in slide.photos) + "\n")
 
 
 def solve_greedy_grouping(photos: List[Photo], grouping_threshold: int, max_group: int) -> Solution:
