@@ -5,9 +5,9 @@ from typing import List, Set
 
 
 class Photo:
-    def __init__(self, index, orientation, tags):
+    def __init__(self, index, is_vert: bool, tags):
         self.index = index
-        self.orientation = orientation
+        self.is_vert = is_vert
         self.tags = tags
         self.common_tag_with: Set[Photo] = set()
 
@@ -49,7 +49,8 @@ def calc_interest(slide1: Slide, slide2: Slide) -> int:
     interest_2 = intersection
     return min(len(interest_1), len(interest_2), len(interest_3))
 
-def calc_interest2(photo1: Photo, photo2: Photo) ->int:
+
+def calc_interest2(photo1: Photo, photo2: Photo) -> int:
     tags1 = set(photo1.tags)
     tags2 = set(photo2.tags)
     intersection = tags1.intersection(tags2)
@@ -65,7 +66,7 @@ def read_file(filename: str) -> List[Photo]:
         photos = []
         for index, line in enumerate(lines[1:]):
             orientation, num_of_tags, *tags = line.strip().split(" ")
-            photo = Photo(index, orientation, tags)
+            photo = Photo(index, orientation == "V", tags)
             photos.append(photo)
         link_photos(photos)
     return photos
