@@ -4,12 +4,24 @@ import random
 from typing import List, Set
 
 
+tag_freq = {}
+avg_tag_freq = 1
+tag_dict = {}
+
+
 class Photo:
     def __init__(self, index, is_vert: bool, tags):
         self.index = index
         self.is_vert = is_vert
         self.tags = tags
-        self.common_tag_with: Set[Photo] = set()
+
+    @property  # it's actually not a fast property
+    def common_tag_with(self):
+        returned = set()
+        for t in self.tags:
+            returned.update(tag_dict[t])
+        returned.remove(self)
+        return returned
 
     def __repr__(self):
         return "slide: " + str(self.index) + " -  has common tags with: [" + ", ".join(map(lambda c: str(c.index), self.common_tag_with)) + "]"
@@ -60,6 +72,20 @@ def calc_interest2(photo1: Photo, photo2: Photo) -> int:
     return min(len(interest_1), len(interest_2), len(interest_3))
 
 
+def calc_tag_worth(tags):
+    return sum(tag_freq[t] for t in tags)
+
+
+def calc_interest_smart(slide1: Slide, slide2: Slide) -> int:
+    tags1 = slide1.tags
+    tags2 = slide2.tags
+    intersection = tags1.intersection(tags2)
+    interest_1 = tags1.difference(intersection)
+    interest_3 = tags2.intersection(intersection)
+    interest_2 = intersection
+    return min(len(interest_1), len(interest_2), len(interest_3))
+
+
 def read_file(filename: str) -> List[Photo]:
     with open(filename, "r") as file:
         lines = file.readlines()
@@ -68,23 +94,35 @@ def read_file(filename: str) -> List[Photo]:
             orientation, num_of_tags, *tags = line.strip().split(" ")
             photo = Photo(index, orientation == "V", tags)
             photos.append(photo)
+            update_tag_freq(tags)
         link_photos(photos)
+        calc_avg_freq()
     return photos
 
 
+def update_tag_freq(tags):
+    global tag_freq
+    for t in tags:
+        if t not in tag_freq:
+            tag_freq[t] = 0
+        else:
+            tag_freq[t] += 1
+
+
+def calc_avg_freq():
+    global tag_freq
+    global avg_tag_freq
+    frequencies = list(tag_freq.values())
+    avg_tag_freq = sum(frequencies)/len(frequencies)
+
+
 def link_photos(photos):
-    tag_dict = {}
     for p in photos:
         for t in p.tags:
             if t not in tag_dict:
-                tag_dict.update({t: [p]})
+                tag_dict[t] = [p]
             else:
                 tag_dict[t].append(p)
-    for p in photos:
-        for t in p.tags:
-            p.common_tag_with.update(tag_dict[t])
-        p.common_tag_with.remove(p)
-    return tag_dict
 
 
 def write_solution(solution: Solution, filename: str):
