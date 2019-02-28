@@ -193,15 +193,37 @@ def solve_greedy_picks(photos: List[Photo]) -> Solution:
         slides.append(last_slide)
     return Solution(slides)
 
+def solve_path(photos: List[Photo], min_threshold:int):
+    slides = []
+    current_photo = photos[0]
+    while len(photos) > 1:
+        print(len(photos))
+        photos.remove(current_photo)
+        slides.append(Slide([current_photo]))
+        options = current_photo.common_tag_with.intersection(photos)
+        best_score = 0
+        best_photo = None
+        for option in options:
+            score = calc_interest2(option, current_photo)
+            if score>best_score:
+                best_score = score
+                best_photo = option
+        if best_score>min_threshold:
+            current_photo = best_photo
+        else:
+            current_photo = photos[0]
+    slides.append(Slide([current_photo]))
+    return Solution(slides)
 
 def main():
-    # filename = "b_lovely_landscapes.txt"
-    filename = "c_memorable_moments.txt"
+    #filename="a_example.txt"
+    filename = "b_lovely_landscapes.txt"
+    #filename = "c_memorable_moments.txt"
     # filename = "d_pet_pictures.txt"
     # filename = "e_shiny_selfies.txt"
     photos = read_file(filename)
     print(f"Calculating for {filename}…")
-    solution = solve_greedy_picks(photos)
+    solution = solve_path(photos, 2)
     print(f"Score of solution: {solution.calc_score()}")
     write_solution(solution, filename.replace(".txt", "_out.txt"))
 
