@@ -1,4 +1,4 @@
-import functools
+import random
 from typing import List
 
 
@@ -59,8 +59,15 @@ def write_solution(solution: Solution, filename: str):
             file.write(", ".join(str(s.index) for s in slide.photos) + "\n")
 
 
-def solve(photos: List[Photo]) -> Solution:
-    # temp test
+def solve_dumb(photos: List[Photo]) -> Solution:
+    slides = []
+    for photo in photos:
+        slides.append(Slide([photo]))
+    return Solution(slides)
+
+
+def solve_random(photos: List[Photo]) -> Solution:
+    random.shuffle(photos)
     slides = []
     for photo in photos:
         slides.append(Slide([photo]))
@@ -68,10 +75,10 @@ def solve(photos: List[Photo]) -> Solution:
 
 
 def main():
-    filename = "a_example.txt"
+    filename = "b_lovely_landscapes.txt"
     photos = read_file(filename)
     print(f"Calculating for {filename}…")
-    solution = solve(photos)
+    solution = solve_random(photos)
     print(f"Score of solution: {solution.calc_score()}")
     write_solution(solution, filename.replace(".txt", "_out.txt"))
 
