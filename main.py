@@ -3,9 +3,9 @@ from typing import List
 
 
 class Photo:
-    def __init__(self, index, orientation, tags):
+    def __init__(self, index: int, is_vert: bool, tags: List[str]):
         self.index = index
-        self.orientation = orientation
+        self.is_vert = is_vert
         self.tags = tags
 
 
@@ -47,7 +47,7 @@ def read_file(filename: str) -> List[Photo]:
         photos = []
         for index, line in enumerate(lines[1:]):
             orientation, num_of_tags, *tags = line.strip().split(" ")
-            photo = Photo(index, orientation, tags)
+            photo = Photo(index, orientation == "V", tags)
             photos.append(photo)
     return photos
 
